@@ -1,7 +1,7 @@
 
 <div align="center">
 
-![image](https://github.com/user-attachments/assets/9ac2f913-d3d6-45ed-9110-457b0e75e7db)
+![image](https://github.com/user-attachments/assets/55a38e74-ab93-4d80-91c8-0fa6130af45a)
 
 <h1>Out of Focus v1.0</h1>
 
