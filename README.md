@@ -12,7 +12,8 @@
 </div>
 
 
-Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process
+Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process.
+We recommend running it on GPU with at least 22GB VRAM and preferabbly a A100 GPU for the best experience.
 
 ## Download the project
 
