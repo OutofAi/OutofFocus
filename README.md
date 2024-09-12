@@ -17,6 +17,9 @@ We recommend running it on GPU with at least 22GB VRAM and preferabbly a A100 GP
 
 
 
+
+https://github.com/user-attachments/assets/1f71553d-d41d-45d6-a256-df3e06f93182
+
 https://github.com/user-attachments/assets/de8a4f9d-cdad-4b73-962e-2cc42bbc2e0d
 
 
