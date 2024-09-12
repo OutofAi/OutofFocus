@@ -43,5 +43,5 @@ If you want to run it on Colab make sure you got a GPU notebook enabled (Views->
 !git clone https://github.com/OutofAi/OutofFocus
 !cd OutofFocus
 !pip install -r requirements.txt
-!python app.py
+!python app.py --share
 ```
