@@ -15,6 +15,7 @@ import os
 import pickle
 from transformers import CLIPImageProcessor
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+import argparse
 
 weights = {
     'down': {
@@ -555,5 +556,8 @@ with gr.Blocks() as demo:
     stop_button.click(stop_reconstruct)
 
 if __name__ == "__main__":
-    demo.launch(share=True)
-    # demo.launch()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--share", action="store_true")
+    args = parser.parse_args()
+
+    demo.launch(share=args.share)
