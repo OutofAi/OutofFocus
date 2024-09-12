@@ -3,8 +3,7 @@ transformers
 gradio
 accelerate
 
-# uncomment this if you require torch on your machine
-# --extra-index-url https://download.pytorch.org/whl/cu121
-# torch
-# torchvision
-# torchaudio
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch
+torchvision
+torchaudio

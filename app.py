@@ -427,7 +427,7 @@ with gr.Blocks() as demo:
             '''
             <div style="text-align: center;">
                 <div style="display: flex; justify-content: center;">
-                    <img src="https://github.com/user-attachments/assets/1a94d4a6-6d76-4af8-bc53-6c6e04f7b71d" alt="Logo">
+                    <img src="https://github.com/user-attachments/assets/55a38e74-ab93-4d80-91c8-0fa6130af45a" alt="Logo">
                 </div>
                 <h1>Out of Focus 1.0</h1>
                 <p style="font-size:16px;">Out of AI presents a flexible tool to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process</p>
