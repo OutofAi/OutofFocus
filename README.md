@@ -13,3 +13,23 @@
 
 
 Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process
+
+## Download the project
+
+```bash
+git clone https://github.com/OutofAi/OutofFocus.git
+cd  OutofFocus
+```
+
+## Install Dependencies
+
+
+```bash
+pip install -r requirements.txt
+```
+
+# 🚀 Run Gradio Demo
+
+```bash
+python app.py
+```
