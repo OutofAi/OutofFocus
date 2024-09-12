@@ -12,4 +12,45 @@
 </div>
 
 
-Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process
+Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process.
+We recommend running it on GPU with at least 22GB VRAM and preferabbly a A100 GPU for the best experience.
+
+
+https://github.com/user-attachments/assets/de8a4f9d-cdad-4b73-962e-2cc42bbc2e0d
+
+
+
+## Download the project
+
+```bash
+git clone https://github.com/OutofAi/OutofFocus.git
+cd  OutofFocus
+```
+
+## Install Dependencies
+
+
+```bash
+pip install -r requirements.txt
+```
+
+# 🚀 Run Gradio Demo
+
+```bash
+python app.py
+```
+
+# 🚀 Run on Colab (GPU based)
+
+If you want to run it on Colab make sure you got a GPU notebook enabled (Views->Notebook Info) a A100 GPU or a L4 GPU and run the following commands
+
+```bash
+!git clone https://github.com/OutofAi/OutofFocus
+%cd OutofFocus
+!pip install -r requirements.txt
+!python app.py --share
+```
+
+
+https://github.com/user-attachments/assets/1f71553d-d41d-45d6-a256-df3e06f93182
+
