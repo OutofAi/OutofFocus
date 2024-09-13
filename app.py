@@ -559,5 +559,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
-
+    demo.queue()
     demo.launch(share=args.share)
