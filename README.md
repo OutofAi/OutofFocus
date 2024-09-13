@@ -42,7 +42,7 @@ python app.py
 
 # 🚀 Run on Colab (GPU based)
 
-If you want to run it on Colab make sure you got a GPU notebook enabled (Views->Notebook Info) a A100 GPU or a L4 GPU and run the following commands
+If you want to run it on [Colab](https://colab.research.google.com/) make sure you got a GPU notebook enabled (Views->Notebook Info) a A100 GPU or a L4 GPU and run the following commands
 
 ```bash
 !git clone https://github.com/OutofAi/OutofFocus
