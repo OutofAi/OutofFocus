@@ -13,7 +13,7 @@
 
 
 Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process.
-We recommend running it on GPU with at least 15GB VRAM and preferabbly a A100 GPU for the best experience.
+We recommend running it on GPU with at least 15GB VRAM and preferably a A100 GPU for the best experience.
 
 
 https://github.com/user-attachments/assets/de8a4f9d-cdad-4b73-962e-2cc42bbc2e0d
@@ -53,4 +53,9 @@ If you want to run it on [Colab](https://colab.research.google.com/) make sure y
 
 
 https://github.com/user-attachments/assets/1f71553d-d41d-45d6-a256-df3e06f93182
+
+
+# More Examples:
+![image](https://github.com/user-attachments/assets/6b80e011-3959-4b3e-a686-365bdb32ae94)
+
 
