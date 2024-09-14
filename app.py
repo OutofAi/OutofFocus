@@ -451,13 +451,13 @@ with gr.Blocks() as demo:
           reconstruct_button = gr.Button("Reconstruct")
           stop_button = gr.Button("Stop", variant="stop", interactive=False)
       with gr.Column():
-        reconstructed_image = gr.Image(type="pil", label="Reconstructed")
-
+        
         with gr.Row():
+            reconstructed_image = gr.Image(type="pil", label="Reconstructed")
             invisible_slider = gr.Slider(minimum=0, maximum=9, step=1, value=7, visible=False)
-            interpolate_slider = gr.Slider(minimum=0, maximum=9, step=1, value=7, label="Cross-Attention Influence", info="Scales the related influence the source image has on the target image")
-        with gr.Row():  
-            new_prompt_input = gr.Textbox(label="New Prompt", interactive=False, info="Manipulate the image by changing the prompt or word addition at the end, achieve the best results by swapping words instead of adding or removing in between")
+        interpolate_slider = gr.Slider(minimum=0, maximum=9, step=1, value=7, label="Cross-Attention Influence", info="Scales the related influence the source image has on the target image")
+        new_prompt_input = gr.Textbox(label="New Prompt", interactive=False, info="Manipulate the image by changing the prompt or adding words at the end; swap words instead of adding or removing them for better results")
+        
         with gr.Row():
             apply_button = gr.Button("Generate Vision", variant="primary", interactive=False)
         with gr.Row():
