@@ -27,15 +27,42 @@ git clone https://github.com/OutofAi/OutofFocus.git
 cd  OutofFocus
 ```
 
-## Install Dependencies
+# 🚀 Run Gradio Demo locally
+After downloading the project and navigating to the correct folder
 
-
+**Install dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
+**Run the app**
+```bash
+python app.py
+```
+# 🚀 Run Gradio Demo locally in Virtual Environment
+If you face any dependency, token or cuda issues we higly recommend running it in a virtual environment.
 
-# 🚀 Run Gradio Demo locally
+To run it in a virtual environment use these commands instead, after downloading the project and navigating to the correct folder
 
+**Create a virtual environment:**
+```bash
+python -m venv venv
+```
+
+**Activate the environment:**
+
+*Windows:*
+```bash
+.\venv\Scripts\activate
+```
+*macOS/Linux:*
+```bash
+source venv/bin/activate
+```
+**Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+**Run the app in virtual environment:**
 ```bash
 python app.py
 ```
