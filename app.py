@@ -3,6 +3,8 @@ import warnings
 warnings.filterwarnings("ignore")
 from diffusers import StableDiffusionPipeline, DDIMInverseScheduler, DDIMScheduler
 import torch
+from torch import autocast
+from torch.amp import GradScaler
 from typing import Optional
 from tqdm import tqdm
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
@@ -17,34 +19,6 @@ import pickle
 from transformers import CLIPImageProcessor
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 import argparse
-
-weights = {
-    "down": {
-        4096: 0.0,
-        1024: 1.0,
-        256: 1.0,
-    },
-    "mid": {
-        64: 1.0,
-    },
-    "up": {
-        256: 1.0,
-        1024: 1.0,
-        4096: 0.0,
-    },
-}
-num_inference_steps = 10
-model_id = "stabilityai/stable-diffusion-2-1-base"
-
-pipe = StableDiffusionPipeline.from_pretrained(model_id).to("cuda")
-inverse_scheduler = DDIMInverseScheduler.from_pretrained(model_id, subfolder="scheduler")
-scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
-
-safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker").to("cuda")
-feature_extractor = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
-
-should_stop = False
-
 
 def save_state_to_file(state):
     filename = "state.pkl"
@@ -75,7 +49,10 @@ def reconstruct(input_img, caption):
 
     transform = torchvision.transforms.Compose([torchvision.transforms.Resize((512, 512)), torchvision.transforms.ToTensor()])
 
-    loaded_image = transform(img).to("cuda").unsqueeze(0)
+    if torch_dtype == torch.float32:
+        loaded_image = transform(img).to("cuda").unsqueeze(0)
+    else:
+        loaded_image = transform(img).half().to("cuda").unsqueeze(0)
 
     if loaded_image.shape[1] == 4:
         loaded_image = loaded_image[:, :3, :, :]
@@ -120,11 +97,14 @@ def reconstruct(input_img, caption):
 
     W_values = uncond_prompt_embeds.repeat(num_inference_steps, 1, 1)
     QT = nn.Parameter(W_values.clone())
+    # Make sure the what we training stays float32
+    QT.data = QT.to(torch.float32)
 
     guidance_scale = 7.5
     scheduler.set_timesteps(num_inference_steps, device="cuda")
     timesteps = scheduler.timesteps
 
+    scaler = GradScaler()
     optimizer = torch.optim.AdamW([QT], lr=0.008)
 
     pipe.vae.eval()
@@ -134,7 +114,7 @@ def reconstruct(input_img, caption):
 
     last_loss = 1
 
-    for epoch in range(50):
+    for _ in tqdm(range(50), desc="Epochs"):
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -158,48 +138,52 @@ def reconstruct(input_img, caption):
 
             latent_model_input = torch.cat([latents] * 2)
 
-            noise_pred_model = pipe.unet(
-                latent_model_input,
-                t,
-                encoder_hidden_states=prompt_embeds,
-                cross_attention_kwargs=None,
-                return_dict=False,
-            )[0]
+            with autocast(device_type="cuda", dtype=torch_dtype):
+                noise_pred_model = pipe.unet(
+                    latent_model_input,
+                    t,
+                    encoder_hidden_states=prompt_embeds,
+                    cross_attention_kwargs=None,
+                    return_dict=False,
+                )[0]
 
-            noise_pred_uncond, noise_pred_text = noise_pred_model.chunk(2)
-            noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                noise_pred_uncond, noise_pred_text = noise_pred_model.chunk(2)
+                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
-            intermediate_values = scheduler.step(noise_pred, t, latents, return_dict=False)[0]
-
-            loss = F.mse_loss(inversed_latents[len(timesteps) - 1 - i].detach(), intermediate_values, reduction="mean")
-            last_loss = loss
+                intermediate_values = scheduler.step(noise_pred, t, latents, return_dict=False)[0]
+                loss = F.mse_loss(inversed_latents[len(timesteps) - 1 - i].detach(), intermediate_values, reduction="mean")
+                last_loss = loss
 
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
         global should_stop
         if should_stop:
             should_stop = False
             break
 
-        image = pipe.vae.decode(latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
+        with torch.no_grad():
+            image = pipe.vae.decode(latents.detach() / pipe.vae.config.scaling_factor, return_dict=False)[0]
+            image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
+            safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
+            image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
+            image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
+            image_np = (image_np * 255).astype(np.uint8)
+
+            yield image_np, caption, [caption, real_image_initial_latents.detach(), QT.detach()]
+
+
+    with torch.no_grad():
+        image = pipe.vae.decode(latents.detach() / pipe.vae.config.scaling_factor, return_dict=False)[0]
         image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
         safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
         image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
         image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
         image_np = (image_np * 255).astype(np.uint8)
 
-        yield image_np, caption, [caption, real_image_initial_latents, QT]
-
-    image = pipe.vae.decode(latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
-    image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
-    safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
-    image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
-    image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
-    image_np = (image_np * 255).astype(np.uint8)
-
-    yield image_np, caption, [caption, real_image_initial_latents, QT]
+        yield image_np, caption, [caption, real_image_initial_latents.detach(), QT.detach()]
 
 
 class AttnReplaceProcessor(AttnProcessor2_0):
@@ -319,13 +303,14 @@ def apply_prompt(meta_data, new_prompt):
             modified_prompt_embeds = torch.cat([QT[i].unsqueeze(0), QT[i].unsqueeze(0), cond_prompt_embeds, new_prompt_embeds])
             latent_model_input = torch.cat([latents] * 2)
 
-            noise_pred = pipe.unet(
-                latent_model_input,
-                t,
-                encoder_hidden_states=modified_prompt_embeds,
-                cross_attention_kwargs=None,
-                return_dict=False,
-            )[0]
+            with autocast(device_type="cuda", dtype=torch_dtype):
+                noise_pred = pipe.unet(
+                    latent_model_input,
+                    t,
+                    encoder_hidden_states=modified_prompt_embeds,
+                    cross_attention_kwargs=None,
+                    return_dict=False,
+                )[0]
 
             noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
             noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
@@ -350,7 +335,11 @@ def on_image_change(filepath):
 
     # Check if the filename is "example1" or "example2"
     if filename in ["example1", "example2", "example3", "example4"]:
-        meta_data_raw = load_state_from_file(f"assets/{filename}.pkl")
+
+        if torch_dtype == torch.float32:
+            meta_data_raw = load_state_from_file(f"assets/{filename}.pkl")
+        else:
+            meta_data_raw = load_state_from_file(f"assets/{filename}-float16.pkl")
         _, _, QT_raw = meta_data_raw
 
         global num_inference_steps
@@ -419,7 +408,44 @@ def update_scale(scale):
     return weights["down"][4096], weights["down"][1024], weights["down"][256], weights["mid"][64], weights["up"][256], weights["up"][1024], weights["up"][4096]
 
 
-with gr.Blocks() as demo:
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--share", action="store_true", help="Enable sharing of the Gradio interface")
+    parser.add_argument("--enable_low_memory", action="store_true", help="Enable low memory mode (uses torch.float16)")
+    args = parser.parse_args()
+
+    weights = {
+        "down": {
+            4096: 0.0,
+            1024: 1.0,
+            256: 1.0,
+        },
+        "mid": {
+            64: 1.0,
+        },
+        "up": {
+            256: 1.0,
+            1024: 1.0,
+            4096: 0.0,
+        },
+    }
+    num_inference_steps = 10
+    model_id = "stabilityai/stable-diffusion-2-1-base"
+    torch_dtype = torch.float16 if args.enable_low_memory else torch.float32
+
+    pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
+
+    inverse_scheduler = DDIMInverseScheduler.from_pretrained(model_id, subfolder="scheduler", torch_dtype=torch_dtype)
+    scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler", torch_dtype=torch_dtype)
+
+    safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", torch_dtype=torch_dtype).to("cuda")
+    feature_extractor = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch16", torch_dtype=torch_dtype)
+
+    should_stop = False
+
+
+with gr.Blocks(analytics_enabled=False) as demo:
     gr.Markdown(
         """
             <div style="text-align: center;">
@@ -453,9 +479,7 @@ with gr.Blocks() as demo:
                 reconstructed_image = gr.Image(type="pil", label="Reconstructed")
                 invisible_slider = gr.Slider(minimum=0, maximum=9, step=1, value=7, visible=False)
             interpolate_slider = gr.Slider(minimum=0, maximum=9, step=1, value=7, label="Cross-Attention Influence", info="Scales the related influence the source image has on the target image")
-            new_prompt_input = gr.Textbox(
-                label="New Prompt", interactive=False, info="Manipulate the image by changing the prompt or adding words at the end; swap words instead of adding or removing them for better results"
-            )
+            new_prompt_input = gr.Textbox(label="New Prompt", interactive=False, info="Manipulate the image by changing the prompt or adding words at the end; swap words instead of adding or removing them for better results")
 
             with gr.Row():
                 apply_button = gr.Button("Generate Vision", variant="primary", interactive=False)
@@ -495,9 +519,9 @@ with gr.Blocks() as demo:
 
     meta_data = gr.State()
 
-    example_input.change(fn=on_image_change, inputs=example_input, outputs=[image_input, reconstructed_image, meta_data, steps_slider, invisible_slider, interpolate_slider]).then(
-        lambda: gr.update(interactive=True), outputs=apply_button
-    ).then(lambda: gr.update(interactive=True), outputs=new_prompt_input)
+    example_input.change(fn=on_image_change, inputs=example_input, outputs=[image_input, reconstructed_image, meta_data, steps_slider, invisible_slider, interpolate_slider]).then(lambda: gr.update(interactive=True), outputs=apply_button).then(
+        lambda: gr.update(interactive=True), outputs=new_prompt_input
+    )
     steps_slider.release(update_step, inputs=steps_slider)
     interpolate_slider.release(update_scale, inputs=interpolate_slider, outputs=[down_slider_4096, down_slider_1024, down_slider_256, mid_slider_64, up_slider_256, up_slider_1024, up_slider_4096])
     invisible_slider.change(update_scale, inputs=invisible_slider, outputs=[down_slider_4096, down_slider_1024, down_slider_256, mid_slider_64, up_slider_256, up_slider_1024, up_slider_4096])
@@ -512,11 +536,9 @@ with gr.Blocks() as demo:
 
     mid_slider_64.change(update_value, inputs=[mid_slider_64, gr.State("mid"), gr.State(64)])
 
-    reconstruct_button.click(reconstruct, inputs=[image_input, prompt_input], outputs=[reconstructed_image, new_prompt_input, meta_data]).then(
-        lambda: gr.update(interactive=True), outputs=reconstruct_button
-    ).then(lambda: gr.update(interactive=True), outputs=new_prompt_input).then(lambda: gr.update(interactive=True), outputs=apply_button).then(
-        lambda: gr.update(interactive=False), outputs=stop_button
-    )
+    reconstruct_button.click(reconstruct, inputs=[image_input, prompt_input], outputs=[reconstructed_image, new_prompt_input, meta_data]).then(lambda: gr.update(interactive=True), outputs=reconstruct_button).then(lambda: gr.update(interactive=True), outputs=new_prompt_input).then(
+        lambda: gr.update(interactive=True), outputs=apply_button
+    ).then(lambda: gr.update(interactive=False), outputs=stop_button)
 
     reconstruct_button.click(lambda: gr.update(interactive=False), outputs=reconstruct_button)
 
@@ -529,9 +551,5 @@ with gr.Blocks() as demo:
     apply_button.click(apply_prompt, inputs=[meta_data, new_prompt_input], outputs=reconstructed_image)
     stop_button.click(stop_reconstruct)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--share", action="store_true")
-    args = parser.parse_args()
     demo.queue()
     demo.launch(share=args.share, inbrowser=True)
