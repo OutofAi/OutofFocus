@@ -8,6 +8,8 @@
 <a href="https://www.buymeacoffee.com/outofai" target="_blank"><img src="https://img.shields.io/badge/-buy_me_a%C2%A0coffee-red?logo=buy-me-a-coffee" alt="Buy Me A Coffee"></a>
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Ashleigh%20Watson)](https://twitter.com/OutofAi) 
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Alex%20Nasa)](https://twitter.com/banterless_ai)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_colab.ipynb)
+
 
 </div>
 
@@ -72,7 +74,15 @@ python app.py
 
 # 🚀 Run Gradio Demo on Google Colab (GPU based)
 
-If you want to run it on [Colab](https://colab.research.google.com/) make sure you got a GPU notebook enabled (Views->Notebook Info) a A100 GPU or a L4 GPU and run the following commands
+
+
+If you want to run it on [Colab](https://colab.research.google.com/) either click on the badge below 
+
+
+ [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_colab.ipynb)
+
+ or create your own notebook, make sure you got a GPU notebook enabled (Views->Notebook Info) a A100 GPU or a L4 GPU and run the following commands
+
 
 ```bash
 !git clone https://github.com/OutofAi/OutofFocus
