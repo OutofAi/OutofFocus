@@ -39,6 +39,9 @@ pip install -r requirements.txt
 ```bash
 python app.py
 ```
+If you running on a GPU with less than 15GB VRAM, you could try the --enable_low_memory argument when starting the app, the test we ran we managed to run it with 11GB VRAM when enable_low_memory was turned on
+
+
 # 🚀 Run Gradio Demo locally in Virtual Environment
 If you face any dependency, token or cuda issues we higly recommend running it in a virtual environment.
 
