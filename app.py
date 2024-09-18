@@ -167,8 +167,8 @@ def reconstruct(input_img, caption):
         with torch.no_grad():
             image = pipe.vae.decode(latents.detach() / pipe.vae.config.scaling_factor, return_dict=False)[0]
             image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
-            safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
-            image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
+            safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
+            image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
             image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
             image_np = (image_np * 255).astype(np.uint8)
 
@@ -178,8 +178,8 @@ def reconstruct(input_img, caption):
     with torch.no_grad():
         image = pipe.vae.decode(latents.detach() / pipe.vae.config.scaling_factor, return_dict=False)[0]
         image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
-        safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
-        image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
+        safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
+        image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
         image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
         image_np = (image_np * 255).astype(np.uint8)
 
@@ -321,8 +321,8 @@ def apply_prompt(meta_data, new_prompt):
 
         image = pipe.vae.decode(latents[1].unsqueeze(0) / pipe.vae.config.scaling_factor, return_dict=False)[0]
         image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
-        safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda")
-        image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]
+        safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
+        image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
         image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
         image_np = (image_np * 255).astype(np.uint8)
 
@@ -413,6 +413,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--share", action="store_true", help="Enable sharing of the Gradio interface")
     parser.add_argument("--enable_low_memory", action="store_true", help="Enable low memory mode (uses torch.float16)")
+    parser.add_argument("--disable_safety_check", action="store_true", help="Disable Safety Check")
     args = parser.parse_args()
 
     weights = {
@@ -433,14 +434,21 @@ if __name__ == "__main__":
     num_inference_steps = 10
     model_id = "stabilityai/stable-diffusion-2-1-base"
     torch_dtype = torch.float16 if args.enable_low_memory else torch.float32
+    
 
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
 
     inverse_scheduler = DDIMInverseScheduler.from_pretrained(model_id, subfolder="scheduler", torch_dtype=torch_dtype)
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler", torch_dtype=torch_dtype)
 
-    safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", torch_dtype=torch_dtype).to("cuda")
-    feature_extractor = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch16", torch_dtype=torch_dtype)
+    if not args.disable_safety_check:
+        safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker", torch_dtype=torch_dtype).to("cuda")
+        feature_extractor = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch16", torch_dtype=torch_dtype)
+    else:
+        safety_checker = None
+        feature_extractor = None
+        print("warning: Disabling safety checks removes protections against inappropriate or harmful content. By turning off this feature, you assume full responsibility for any generated content and release the developers from all liability. Use at your own risk.")
+
 
     should_stop = False
 
