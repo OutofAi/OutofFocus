@@ -11,6 +11,7 @@ from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.transforms.functional import resize, center_crop, to_tensor
 import gc
 import gradio as gr
 import numpy as np
@@ -60,22 +61,33 @@ def reconstruct(input_img, caption):
 
     img = input_img
 
-    # Original image dimensions
-    width, height = input_img.size
-    global aspect_ratio
-    aspect_ratio = width / height
-
     cond_prompt_embeds = pipe.encode_prompt(prompt=caption, device="cuda", num_images_per_prompt=1, do_classifier_free_guidance=False)[0]
     uncond_prompt_embeds = pipe.encode_prompt(prompt="", device="cuda", num_images_per_prompt=1, do_classifier_free_guidance=False)[0]
 
     prompt_embeds_combined = torch.cat([uncond_prompt_embeds, cond_prompt_embeds])
+    
+    width, height = input_img.size
 
-    transform = torchvision.transforms.Compose([torchvision.transforms.Resize((512, 512)), torchvision.transforms.ToTensor()])
+    if width < height:
+        new_width = 512
+        new_height = int(512 * height / width)
+    else:
+        new_height = 512
+        new_width = int(512 * width / height)
+
+    # Resize the image, preserving the aspect ratio
+    resized_image = resize(img, (new_height, new_width))
+
+    # Center crop to 512x512
+    cropped_image = center_crop(resized_image, (512, 512))
+
+    # Convert to tensor and apply device transformations
+    transform = torchvision.transforms.Compose([to_tensor])
 
     if torch_dtype == torch.float32:
-        loaded_image = transform(img).to("cuda").unsqueeze(0)
+        loaded_image = transform(cropped_image).to("cuda").unsqueeze(0)
     else:
-        loaded_image = transform(img).half().to("cuda").unsqueeze(0)
+        loaded_image = transform(cropped_image).half().to("cuda").unsqueeze(0)
 
     if loaded_image.shape[1] == 4:
         loaded_image = loaded_image[:, :3, :, :]
@@ -353,7 +365,7 @@ def on_image_change(filepath):
 
     global aspect_ratio
     aspect_ratio = 1
-    
+
     # Extract the filename without extension
     filename = os.path.splitext(os.path.basename(filepath))[0]
 
