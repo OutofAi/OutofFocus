@@ -37,10 +37,33 @@ def stop_reconstruct():
     global should_stop
     should_stop = True
 
+aspect_ratio = 1
+
+def fix_aspect_ratio(tensor_image):
+
+    to_pil = torchvision.transforms.transforms.ToPILImage()
+    resized_pil_img = to_pil(tensor_image)
+
+    # Fix the aspect ratio
+    if aspect_ratio > 1:
+        # Wider image
+        new_width = 512
+        new_height = int(512 / aspect_ratio)
+    else:
+        # Taller image
+        new_height = 512
+        new_width = int(512 * aspect_ratio)
+
+    return resized_pil_img.resize((new_width, new_height))
 
 def reconstruct(input_img, caption):
 
     img = input_img
+
+    # Original image dimensions
+    width, height = input_img.size
+    global aspect_ratio
+    aspect_ratio = width / height
 
     cond_prompt_embeds = pipe.encode_prompt(prompt=caption, device="cuda", num_images_per_prompt=1, do_classifier_free_guidance=False)[0]
     uncond_prompt_embeds = pipe.encode_prompt(prompt="", device="cuda", num_images_per_prompt=1, do_classifier_free_guidance=False)[0]
@@ -169,8 +192,7 @@ def reconstruct(input_img, caption):
             image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
             safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
             image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
-            image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
-            image_np = (image_np * 255).astype(np.uint8)
+            image_np = fix_aspect_ratio(image[0].squeeze(0).float())
 
             yield image_np, caption, [caption, real_image_initial_latents.detach(), QT.detach()]
 
@@ -180,8 +202,7 @@ def reconstruct(input_img, caption):
         image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
         safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
         image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
-        image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
-        image_np = (image_np * 255).astype(np.uint8)
+        image_np = fix_aspect_ratio(image[0].squeeze(0).float())
 
         yield image_np, caption, [caption, real_image_initial_latents.detach(), QT.detach()]
 
@@ -323,13 +344,16 @@ def apply_prompt(meta_data, new_prompt):
         image = (image / 2.0 + 0.5).clamp(0.0, 1.0)
         safety_checker_input = feature_extractor(image, return_tensors="pt", do_rescale=False).to("cuda") if feature_extractor!=None else image
         image = safety_checker(images=[image], clip_input=safety_checker_input.pixel_values.to("cuda"))[0]  if safety_checker!=None else image
-        image_np = image[0].squeeze(0).float().permute(1, 2, 0).detach().cpu().numpy()
-        image_np = (image_np * 255).astype(np.uint8)
+        image_np = fix_aspect_ratio(image[0].squeeze(0).float())
 
     return image_np
 
 
 def on_image_change(filepath):
+
+    global aspect_ratio
+    aspect_ratio = 1
+    
     # Extract the filename without extension
     filename = os.path.splitext(os.path.basename(filepath))[0]
 
