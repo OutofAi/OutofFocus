@@ -363,7 +363,7 @@ def on_image_change(filepath):
     # Extract the filename without extension
     filename = os.path.splitext(os.path.basename(filepath))[0]
 
-    if filename in ["example1", "example2", "example4"]:
+    if filename in ["example1", "example3", "example4"]:
 
         meta_data_raw = load_state_from_file(f"assets/{filename}-turbo.pkl")
 
