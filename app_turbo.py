@@ -179,7 +179,9 @@ def reconstruct(input_img, caption):
         image_np = (image_np / 2 + 0.5).clamp(0, 1).numpy()
         image_np = (image_np * 255).astype(np.uint8)
 
-        return image_np, caption, max_scale_value, [caption, real_image_initial_latents.detach(), inversed_latents, weights]
+        update_scale(12)
+
+        return image_np, caption, 12, [caption, real_image_initial_latents.detach(), inversed_latents, weights]
 
 class AttnReplaceProcessor(AttnProcessor2_0):
 
