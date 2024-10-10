@@ -13,6 +13,10 @@
 
 </div>
 
+| **SD2.1 (15 GB)** | **SD1.5 (8GB)** |
+|----------------------|----------------------|
+| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_colab.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_turbo_colab.ipynb) |
+
 
 Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process.
 We recommend running it on GPU with at least 15GB VRAM and preferably a A100 GPU for the best experience.
