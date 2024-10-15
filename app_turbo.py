@@ -1,7 +1,7 @@
 import warnings
 
 warnings.filterwarnings("ignore")
-from diffusers import DiffusionPipeline, DDIMInverseScheduler, DDIMScheduler
+from diffusers import DiffusionPipeline, DDIMInverseScheduler, DDIMScheduler, AutoencoderKL
 import torch
 from typing import Optional
 from tqdm import tqdm
@@ -452,11 +452,15 @@ if __name__ == "__main__":
     num_inference_steps = 10
 
     # model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+    # vae_model_id = "madebyollin/sdxl-vae-fp16-fix"
+    # vae_folder = ""
     # guidance_scale_value = 7.5
     # resadapter_model_name = "resadapter_v2_sdxl"
     # res_range_min = 256 
     # res_range_max = 1536
     model_id = "runwayml/stable-diffusion-v1-5"
+    vae_model_id = "runwayml/stable-diffusion-v1-5"
+    vae_folder = "vae"
     guidance_scale_value = 7.5
     resadapter_model_name = "resadapter_v2_sd1.5"
     res_range_min = 128 
@@ -467,6 +471,7 @@ if __name__ == "__main__":
 
     # torch_dtype = torch.float16
     pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch_dtype).to("cuda")
+    pipe.vae = AutoencoderKL.from_pretrained(vae_model_id, subfolder=vae_folder, torch_dtype=torch_dtype).to("cuda")
     pipe.load_lora_weights(
         hf_hub_download(repo_id="jiaxiangc/res-adapter", subfolder=resadapter_model_name, filename="pytorch_lora_weights.safetensors"), 
         adapter_name="res_adapter",
