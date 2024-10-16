@@ -13,8 +13,8 @@
 
 </div>
 
-| **SD2.1 (15 GB)** | **SD1.5 (8GB)** |
-|----------------------|----------------------|
+| **SD2.1 (15 GB) uses pivotal tunining, slow editing** | **SD1.5 (8GB) uses latent alignment, fast editing** |
+|:----------------------:|:----------------------:|
 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_colab.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_turbo_colab.ipynb) |
 
 
