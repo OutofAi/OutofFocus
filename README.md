@@ -98,9 +98,11 @@ If you want to run it on [Colab](https://colab.research.google.com/) either clic
 !python app.py --share
 ```
 
-
 https://github.com/user-attachments/assets/1f71553d-d41d-45d6-a256-df3e06f93182
 
+
+# Disclaimer
+This project aims to contribute positively to the field of AI-based image generation. While users are encouraged to explore its creative capabilities, they are responsible for adhering to local regulations and using the tool responsibly. The developers are not liable for any misuse by users.
 
 # More Examples:
 ![image](https://github.com/user-attachments/assets/d9f7aac4-abd6-448f-9c1a-c046958086a9)
