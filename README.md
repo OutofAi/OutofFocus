@@ -13,16 +13,13 @@
 
 </div>
 
-| **SD2.1 (15 GB) uses pivotal tunining, slow editing** | **SD1.5 (8GB) uses latent alignment, fast editing** |
-|:----------------------:|:----------------------:|
-| [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_colab.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutofAi/OutofFocus/blob/main/app_turbo_colab.ipynb) |
-
-
 Out of AI presents a flexible tool in Gradio to manipulate your images. This is our first version of Image modification tool through prompt manipulation by reconstruction through diffusion inversion process.
 
+<div align="center">
 
 https://github.com/user-attachments/assets/de8a4f9d-cdad-4b73-962e-2cc42bbc2e0d
 
+</div>
 
 
 ## Download the project
@@ -41,13 +38,13 @@ pip install -r requirements.txt
 ```
 **Run the app**
 ```bash
-python app.py
+python app_turbo.py
 ```
-If you running on a GPU with less than 15GB VRAM, try running the turbo variation as it only requires 8 GB VRAM, this model
-uses SD 1.5 and can handle any aspect ratios as well
+You can also run the SD 2.1 version that requires A100 GPU for efficient editting
+
 **Run the app**
 ```bash
-python app_turbo.py
+python app.py
 ```
 
 # 🚀 Run Gradio Demo locally in Virtual Environment
@@ -76,7 +73,7 @@ pip install -r requirements.txt
 ```
 **Run the app in virtual environment:**
 ```bash
-python app.py
+python app_turbo.py
 ```
 
 # 🚀 Run Gradio Demo on Google Colab (GPU based)
